@@ -18,6 +18,13 @@ else()
     message(FATAL_ERROR "Could not find CUDA Compiler. Make sure $CUDA_HOME is set.")
 endif()
 
+execute_process(
+    COMMAND which ${Python_EXECUTABLE}
+)
+
+execute_process(
+    COMMAND ${Python_EXECUTABLE} --version
+)
 
 execute_process(
     COMMAND ${Python_EXECUTABLE} -c "import torch.utils; print(torch.utils.cmake_prefix_path)"
@@ -31,10 +38,47 @@ message(FATAL_ERROR "failed to find your pytorch installation, error: ${TORCH_CM
 endif()
 
 string(STRIP ${TORCH_CMAKE_PATH_OUTPUT} TORCH_CMAKE_PATH_OUTPUT)
+
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${TORCH_CMAKE_PATH_OUTPUT}")
 
-find_package(Torch 1.13 REQUIRED)
+execute_process(
+    COMMAND sh -c "grep -q 'set(CUDA_ALL_GPU_ARCHITECTURES \"3.5\" \"5.0\")' ${TORCH_CMAKE_PATH_OUTPUT}/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake"
+    RESULT_VARIABLE grep_result
+    OUTPUT_VARIABLE grep_output
+    ERROR_VARIABLE grep_error
+)
+# set(CUDA_ALL_GPU_ARCHITECTURES "3.5" "5.0")
+#TORCH_CMAKE_PATH_OUTPUT: /opt/python/cp311-cp311/lib/python3.11/site-packages/torch/share/cmake
+if (grep_result EQUAL 0)
+    execute_process(
+        COMMAND sh -c "sed -i -E 's/set\\(CUDA_COMMON_GPU_ARCHITECTURES \"3\\.5\" \"5\\.0\"\\)/set(CUDA_COMMON_GPU_ARCHITECTURES \"\")/' ${TORCH_CMAKE_PATH_OUTPUT}/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        ERROR_VARIABLE error
+    )
 
+    if (NOT ${result} EQUAL 0)
+        message(FATAL_ERROR "Error running sed: ${error}")
+    else()
+        message(STATUS "sed command ran successfully.")
+    endif()
+    
+    execute_process(
+        COMMAND sh -c "sed -i -E 's/set\\(CUDA_ALL_GPU_ARCHITECTURES \"3\\.5\" \"5\\.0\"\\)/set(CUDA_ALL_GPU_ARCHITECTURES \"\")/' ${TORCH_CMAKE_PATH_OUTPUT}/Caffe2/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake"
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE output
+        ERROR_VARIABLE error
+    )
+
+    if (NOT ${result} EQUAL 0)
+        message(FATAL_ERROR "Error running sed: ${error}")
+    else()
+        message(STATUS "sed command ran successfully.")
+    endif()
+
+endif()
+
+find_package(Torch 1.13 REQUIRED)
 
 #enable relocatable device code (e.g for cuda_utils.cu)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -rdc=true -lineinfo")

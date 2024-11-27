@@ -12,9 +12,9 @@ jobs:
     strategy:
       matrix:
         cibw-arch: ["x86_64"]
-        cibw-python: ['cp312-*']
+        cibw-python: ['cp311-*']
         python-version: [3.11]
-        pytorch-version: [2.4.0, 2.5.0]
+        pytorch-version: [2.4.1]
         cuda-version: [12.4.0]
         cuversion: [124]
     env:
@@ -58,7 +58,18 @@ jobs:
           CUDA_HOME=/usr/local/cuda
           PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu${{ matrix.cuversion }}
         CIBW_REPAIR_WHEEL_COMMAND_LINUX: |
-          auditwheel repair --exclude libtorch.so --exclude libtorch_cpu.so --exclude libtorch_cuda.so --exclude libc10.so --exclude libc10_cuda.so -w {dest_dir} {wheel}
+          auditwheel repair \
+          --exclude libtorch.so \
+          --exclude libcuda.so \
+          --exclude libcuda.so.1 \
+          --exclude libc10.so \
+          --exclude libtorch_cuda.so \
+          --exclude libc10_cuda.so \
+          --exclude libtorch_cpu.so \
+          --exclude libcudart.so \
+          --exclude libnvToolsExt.so \
+          --exclude libnvrtc.so \
+          -w {dest_dir} {wheel}
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v3

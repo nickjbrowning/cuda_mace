@@ -32,7 +32,7 @@ __global__ void __launch_bounds__(NWARPS *WARP_SIZE)
     linear_wmma_kernel(const float *__restrict__ X, const float *__restrict__ W,
                        float *__restrict__ OUT, const int NNODES, const uint M,
                        const uint N, const uint K, const uint L) {
-
+#if __CUDA_ARCH__ >= 800
   const uint cCol = blockIdx.y;
 
   extern __shared__ char buffer[];
@@ -171,6 +171,7 @@ __global__ void __launch_bounds__(NWARPS *WARP_SIZE)
       }
     }
   }
+#endif
 }
 
 torch::Tensor linear_wmma(torch::Tensor X, torch::Tensor W) {
@@ -252,6 +253,7 @@ __global__ void __launch_bounds__(NWARPS *WARP_SIZE)
         float *__restrict__ OUT, const int NNODES, const uint M, const uint N,
         const uint K, const uint L) {
 
+#if __CUDA_ARCH__ >= 800
   const uint cCol = blockIdx.y;
 
   extern __shared__ char buffer[];
@@ -385,6 +387,7 @@ __global__ void __launch_bounds__(NWARPS *WARP_SIZE)
       }
     }
   }
+#endif
 }
 
 torch::Tensor elemental_linear_wmma(torch::Tensor X, torch::Tensor W,
